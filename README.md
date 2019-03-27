@@ -109,3 +109,16 @@ curl http://www.linuxfromscratch.org/lfs/view/stable/chapter02/hostreqs.html | g
 bash version-check.sh | grep not
 # make sure no errors appear above
 ```
+
+# Install software
+
+```bash
+# get back to lfs
+su - lfs
+
+export LFS=/mnt/lfs
+export MAKEFLAGS='-j 2'
+cd $LFS/sources/
+```
+
+Launch [install_software.bash](install_software.bash)
