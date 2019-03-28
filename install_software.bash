@@ -6,7 +6,7 @@
 #    By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/03/26 18:24:02 by agrumbac          #+#    #+#              #
-#    Updated: 2019/03/27 19:07:05 by agrumbac         ###   ########.fr        #
+#    Updated: 2019/03/28 18:51:44 by agrumbac         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -218,3 +218,130 @@ if [ $TEST_GCC_1 = "0" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http
 rm -v dummy.c a.out
 cd ../..
 rm -rf gcc-8.2.0
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/tcl.html
+tar xf tcl8.6.9-src.tar.gz
+cd tcl8.6.9
+cd unix
+./configure --prefix=/tools
+make
+TZ=UTC make test
+make install
+chmod -v u+w /tools/lib/libtcl8.6.so
+make install-private-headers
+ln -sv tclsh8.6 /tools/bin/tclsh
+cd ../..
+rm -rf tcl8.6.9
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/expect.html
+tar xf expect5.45.4.tar.gz
+cd expect5.45.4
+cp -v configure{,.orig}
+sed 's:/usr/local/bin:/bin:' configure.orig > configure
+./configure --prefix=/tools       \
+            --with-tcl=/tools/lib \
+            --with-tclinclude=/tools/include
+make
+make test
+make SCRIPTS="" install
+cd ..
+rm -rf expect5.45.4
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/dejagnu.html
+tar xf dejagnu-1.6.2.tar.gz
+cd dejagnu-1.6.2
+./configure --prefix=/tools
+make install
+make check
+cd ..
+rm -rf dejagnu-1.6.2
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/m4.html
+tar xf m4-1.4.18.tar.xz
+cd m4-1.4.18
+sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c
+echo "#define _IO_IN_BACKUP 0x100" >> lib/stdio-impl.h
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf m4-1.4.18
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/ncurses.html
+tar xf ncurses-6.1.tar.gz
+cd ncurses-6.1
+sed -i s/mawk// configure
+./configure --prefix=/tools \
+            --with-shared   \
+            --without-debug \
+            --without-ada   \
+            --enable-widec  \
+            --enable-overwrite
+make
+make install
+ln -s libncursesw.so /tools/lib/libncurses.so
+cd ..
+rm -rf ncurses-6.1
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/bash.html
+tar xf bash-5.0.tar.gz
+cd bash-5.0
+./configure --prefix=/tools --without-bash-malloc
+make
+make tests
+make install
+ln -sv bash /tools/bin/sh
+cd ..
+rm -rf bash-5.0
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/bison.htmls
+tar xf bison-3.3.2.tar.xz
+cd bison-3.3.2
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf bison-3.3.2
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/bzip2.html
+tar xf bzip2-1.0.6.tar.gz
+cd bzip2-1.0.6
+make
+make PREFIX=/tools install
+cd ..
+rm -rf bzip2-1.0.6
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/coreutils.html
+tar xf coreutils-8.30.tar.xz
+cd coreutils-8.30
+./configure --prefix=/tools --enable-install-program=hostname
+make
+make RUN_EXPENSIVE_TESTS=yes check
+make install
+cd ..
+rm -rf coreutils-8.30
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/diffutils.html
+tar xf diffutils-3.7.tar.xz
+cd diffutils-3.7
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf diffutils-3.7
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/file.html
