@@ -1,7 +1,7 @@
 # ft_linux
-Making my own linux distribution (LFS)
+Making my own linux distribution ([LFS](http://www.linuxfromscratch.org/lfs/view/stable/))
 
-# Preparations
+# Getting Ready
 
 ## VM creation
 
@@ -27,7 +27,7 @@ apt-get install -y openssh-server
 ip address | grep inet
 ```
 
-## Copy Paste from [LFS](http://www.linuxfromscratch.org/lfs/view/stable/)
+# Preparations
 
 ```bash
 # become The One
@@ -110,7 +110,7 @@ bash version-check.sh | grep not
 # make sure no errors appear above
 ```
 
-# Install software
+# Constructing a Temporary System
 
 ```bash
 # get back to lfs
@@ -121,4 +121,21 @@ export MAKEFLAGS='-j 2'
 cd $LFS/sources/
 ```
 
-Launch [install_software.bash](install_software.bash)
+Install software with [install_software.bash](install_software.bash)
+
+```bash
+# make some room
+strip --strip-debug /tools/lib/*
+/usr/bin/strip --strip-unneeded /tools/{,s}bin/*
+rm -rf /tools/{,share}/{info,man,doc}
+find /tools/{lib,libexec} -name \*.la -delete
+
+# get back to root
+exec <&-
+export LFS=/mnt/lfs
+
+# change ownership
+chown -R root:root $LFS/tools
+```
+
+# Building the LFS System

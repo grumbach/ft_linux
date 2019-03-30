@@ -6,7 +6,7 @@
 #    By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/03/26 18:24:02 by agrumbac          #+#    #+#              #
-#    Updated: 2019/03/28 18:51:44 by agrumbac         ###   ########.fr        #
+#    Updated: 2019/03/30 19:13:39 by agrumbac         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -345,3 +345,163 @@ rm -rf diffutils-3.7
 
 
 # http://www.linuxfromscratch.org/lfs/view/stable/chapter05/file.html
+tar xf file-5.36.tar.gz
+cd file-5.36
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf file-5.36
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/findutils.html
+tar xf findutils-4.6.0.tar.gz
+cd findutils-4.6.0
+sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c
+sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c
+echo "#define _IO_IN_BACKUP 0x100" >> gl/lib/stdio-impl.h
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf findutils-4.6.0
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/gawk.html
+tar xf gawk-4.2.1.tar.xz
+cd gawk-4.2.1
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf gawk-4.2.1
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/gettext.html
+tar xf gettext-0.19.8.1.tar.xz
+cd gettext-0.19.8.1
+cd gettext-tools
+EMACS="no" ./configure --prefix=/tools --disable-shared
+make -C gnulib-lib
+make -C intl pluralx.c
+make -C src msgfmt
+make -C src msgmerge
+make -C src xgettext
+cp -v src/{msgfmt,msgmerge,xgettext} /tools/bin
+cd ../..
+rm -rf gettext-0.19.8.1
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/grep.html
+tar -xf grep-3.3.tar.xz
+cd grep-3.3
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf grep-3.3
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/gzip.html
+tar xf gzip-1.10.tar.xz
+cd gzip-1.10
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf gzip-1.10
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/make.html
+tar xf make-4.2.1.tar.bz2
+cd make-4.2.1
+sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c
+./configure --prefix=/tools --without-guile
+make
+make check
+make install
+cd ..
+rm -rf make-4.2.1
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/patch.html
+tar xf patch-2.7.6.tar.xz
+cd patch-2.7.6
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf patch-2.7.6
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/perl.html
+tar xf perl-5.28.1.tar.xz
+cd perl-5.28.1
+sh Configure -des -Dprefix=/tools -Dlibs=-lm -Uloclibpth -Ulocincpth
+make
+cp -v perl cpan/podlators/scripts/pod2man /tools/bin
+mkdir -pv /tools/lib/perl5/5.28.1
+cp -Rv lib/* /tools/lib/perl5/5.28.1
+cd ..
+rm -rf perl-5.28.1
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/Python.html
+tar xf Python-3.7.2.tar.xz
+cd Python-3.7.2
+sed -i '/def add_multiarch_paths/a \        return' setup.py
+./configure --prefix=/tools --without-ensurepip
+make
+make install
+cd ..
+rm -rf Python-3.7.2
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/sed.html
+tar xf sed-4.7.tar.xz
+cd sed-4.7
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf sed-4.7
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/tar.html
+tar xf tar-1.31.tar.xz
+cd tar-1.31
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf tar-1.31
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/texinfo.html
+tar xf texinfo-6.5.tar.xz
+cd texinfo-6.5
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf texinfo-6.5
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter05/xz.html
+tar xf xz-5.2.4.tar.xz
+cd xz-5.2.4
+./configure --prefix=/tools
+make
+make check
+make install
+cd ..
+rm -rf xz-5.2.4
