@@ -264,3 +264,8 @@ cd /sources/
 ## Installing Basic System Software
 
 Install basic system software with [install_sys_software.bash](install_sys_software.bash)
+
+```bash
+# change root password
+passwd root
+```
