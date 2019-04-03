@@ -6,7 +6,7 @@
 #    By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/03/30 20:53:09 by agrumbac          #+#    #+#              #
-#    Updated: 2019/04/03 05:02:16 by agrumbac         ###   ########.fr        #
+#    Updated: 2019/04/03 09:18:39 by agrumbac         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -406,23 +406,32 @@ install -v -dm755 /usr/lib/bfd-plugins
 ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/8.2.0/liblto_plugin.so \
         /usr/lib/bfd-plugins/
 
-
-
-
 # test manually
 echo 'int main(){}' > dummy.c
 cc dummy.c -v -Wl,--verbose &> dummy.log
-readelf -l a.out | grep ': /lib'
-
-
-............ WIP ...............
-
-
-
-
-
-
-
+TEST_GCC_1=$(readelf -l a.out | grep ': /lib' | grep "/lib64/ld-linux" | wc -l)
+if [ "$TEST_GCC_1" != "1" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http://www.linuxfromscratch.org/lfs/view/stable/chapter06/gcc.html\n\n"; fi
+TEST_GCC_1=$(grep -o '/usr/lib.*/crt[1in].*succeeded' dummy.log | grep "succeeded" | wc -l)
+if [ "$TEST_GCC_1" != "3" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http://www.linuxfromscratch.org/lfs/view/stable/chapter06/gcc.html\n\n"; fi
+TEST_GCC_1=$(grep -B4 '^ /usr/include' dummy.log)
+TEST_GCC_OK=`printf "#include <...> search starts here:\n /usr/lib/gcc/x86_64-pc-linux-gnu/8.2.0/include\n /usr/local/include\n /usr/lib/gcc/x86_64-pc-linux-gnu/8.2.0/include-fixed\n /usr/include\n"`
+if [ "$TEST_GCC_1" != "$TEST_GCC_OK" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http://www.linuxfromscratch.org/lfs/view/stable/chapter06/gcc.html\n\n"; fi
+TEST_GCC_1=$(grep 'SEARCH.*/usr/lib' dummy.log |sed 's|; |\n|g' | grep -v "linux-gnu")
+TEST_GCC_OK=`printf 'SEARCH_DIR("/usr/local/lib64")\nSEARCH_DIR("/lib64")\nSEARCH_DIR("/usr/lib64")\nSEARCH_DIR("/usr/local/lib")\nSEARCH_DIR("/lib")\nSEARCH_DIR("/usr/lib");\n'`
+if [ "$TEST_GCC_1" != "$TEST_GCC_OK" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http://www.linuxfromscratch.org/lfs/view/stable/chapter06/gcc.html\n\n"; fi
+TEST_GCC_1=$(grep "/lib.*/libc.so.6 " dummy.log)
+TEST_GCC_OK="attempt to open /lib/libc.so.6 succeeded"
+if [ "$TEST_GCC_1" != "$TEST_GCC_OK" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http://www.linuxfromscratch.org/lfs/view/stable/chapter06/gcc.html\n\n"; fi
+TEST_GCC_1=$(grep found dummy.log)
+TEST_GCC_OK="found ld-linux-x86-64.so.2 at /lib/ld-linux-x86-64.so.2"
+if [ "$TEST_GCC_1" != "$TEST_GCC_OK" ]; then printf "\n\n\e[31m ERROR ABOVE check test at http://www.linuxfromscratch.org/lfs/view/stable/chapter06/gcc.html\n\n"; fi
+rm -v dummy.c a.out dummy.log
+# move a misplaced file
+mkdir -pv /usr/share/gdb/auto-load/usr/lib
+mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
 
 cd ../..
 rm -rf gcc-8.2.0
+
+
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter06/bzip2.html
