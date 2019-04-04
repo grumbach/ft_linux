@@ -269,3 +269,35 @@ Install basic system software with [install_sys_software.bash](install_sys_softw
 # change root password
 passwd root
 ```
+
+## Cleanup
+
+```bash
+# cleanup
+rm -rf /tmp/*
+
+# reenter chroot env with the new chroot
+logout
+chroot "$LFS" /usr/bin/env -i          \
+    HOME=/root TERM="$TERM"            \
+    PS1='(lfs chroot) \u:\w\$ '        \
+    PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+    /bin/bash --login
+
+# remove remaining static libs
+rm -f /usr/lib/lib{bfd,opcodes}.a
+rm -f /usr/lib/libbz2.a
+rm -f /usr/lib/lib{com_err,e2p,ext2fs,ss}.a
+rm -f /usr/lib/libltdl.a
+rm -f /usr/lib/libfl.a
+rm -f /usr/lib/libz.a
+
+# remove unneeded .la files
+find /usr/lib /usr/libexec -name \*.la -delete
+```
+
+## System configuration
+
+```bash
+
+```
