@@ -340,7 +340,7 @@ nameserver 8.8.4.4
 EOF
 
 # set hostname
-HOST_NAME="agrumbac_LFS"
+HOST_NAME="agrumbac"
 echo $HOST_NAME > /etc/hostname
 
 # set up /etc/hosts (Still no idea what I'm doing...)
@@ -482,6 +482,7 @@ printf "\
 # file system  mount-point  type     options             dump  fsck\n\
 #                                                              order\n\
 \n\
+/dev/sda1      /boot        ext2     defaults            0     0\n\
 /dev/sda3      /            ext4     defaults            1     1\n\
 /dev/sda2      swap         swap     pri=1               0     0\n\
 proc           /proc        proc     nosuid,noexec,nodev 0     0\n\
@@ -518,20 +519,25 @@ sed -i 's/# CONFIG_UNWINDER_FRAME_POINTER is not set/CONFIG_UNWINDER_FRAME_POINT
 # takes some time...
 make
 
+# install modules
+make modules_install
+
 # bind the boot partition as root in host system
 exec <&-
 sudo su
 mount --bind /boot /mnt/lfs/boot
 
 # enter chroot again
+export LFS=/mnt/lfs
 chroot "$LFS" /usr/bin/env -i          \
     HOME=/root TERM="$TERM"            \
     PS1='(lfs chroot) \u:\w\$ '        \
     PATH=/bin:/usr/bin:/sbin:/usr/sbin \
     /bin/bash --login
+cd /sources/linux-4.20.12
 
 # copy files to /boot
-cp -iv arch/x86/boot/bzImage /boot/vmlinuz-4.20.12-lfs-8.4
+cp -iv arch/x86/boot/bzImage /boot/vmlinuz-4.20.12-agrumbac
 cp -iv System.map /boot/System.map-4.20.12
 cp -iv .config /boot/config-4.20.12
 install -d /usr/share/doc/linux-4.20.12
@@ -551,4 +557,60 @@ install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
 
 # End /etc/modprobe.d/usb.conf
 EOF
+```
+
+## Set up GRUB
+
+```bash
+# set up the boot track <------------------ TODO stuck here!!!
+grub-install /dev/sda1
+
+# creating the GRUB configuration file
+cat > /boot/grub/grub.cfg << "EOF"
+# Begin /boot/grub/grub.cfg
+set default=0
+set timeout=5
+
+insmod ext2
+set root=(hd0,1)
+
+menuentry "GNU/Linux, Linux 4.20.12-lfs-8.4" {
+        linux   /vmlinuz-4.20.12-agrumbac root=/dev/sda3 ro
+}
+EOF
+```
+
+## (Optional) Install additional software
+
+Install with [install_additional_software.bash](install_additional_software.bash)
+
+## The End
+
+```bash
+# create lfs-release file
+echo 8.4 > /etc/lfs-release
+
+# create status file
+cat > /etc/lsb-release << "EOF"
+DISTRIB_ID="Linux From Scratch"
+DISTRIB_RELEASE="8.4"
+DISTRIB_CODENAME="agrumbac"
+DISTRIB_DESCRIPTION="Linux From Scratch"
+EOF
+
+# exit the chroot
+logout
+
+# unmount everything
+umount -v $LFS/dev/pts
+umount -v $LFS/dev
+umount -v $LFS/run
+umount -v $LFS/proc
+umount -v $LFS/sys
+umount -v $LFS/root #not sure TODO !!
+umount -v $LFS/swap #not sure TODO !!
+umount -v $LFS
+
+# reboot
+shutdown -r now
 ```
