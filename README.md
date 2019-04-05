@@ -104,7 +104,7 @@ apt-get install -y bison
 # install gcc and everything else
 apt-get install -y build-essential
 
-# check everything
+# check everything (WARNING unsafe: executing downloaded code)
 curl http://www.linuxfromscratch.org/lfs/view/stable/chapter02/hostreqs.html | grep -A53 "# Simple script to list version numbers of critical development tools" | sed 's:</code>::g' | sed 's:&gt;:>:g' | sed 's:&lt;:<:g' | sed 's:&amp;:\&:g' | sed 's:failed:not OK:g' > version-check.sh
 bash version-check.sh | grep not
 # make sure no errors appear above
@@ -273,6 +273,9 @@ passwd root
 ## Cleanup
 
 ```bash
+# stripping was voluntarily skipped, to do it visit :
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter06/strippingagain.html
+
 # cleanup
 rm -rf /tmp/*
 
@@ -297,6 +300,179 @@ find /usr/lib /usr/libexec -name \*.la -delete
 ```
 
 ## System configuration
+
+```bash
+# install LFS-Bootscripts
+tar xf lfs-bootscripts-20180820.tar.bz2
+cd lfs-bootscripts-20180820
+make install
+cd ..
+rm -rf lfs-bootscripts-20180820
+
+# creating custom udev rules
+bash /lib/udev/init-net-rules.sh
+
+# gather network info (I have no idea what I'm doing...)
+NETW_NAME=$(cat /etc/udev/rules.d/70-persistent-net.rules | grep ACTION | awk -F "NAME=" '{print $2}' | sed 's/"//g' | head -1)
+NETW_IP=$(ifconfig | grep -A2 $NETW_NAME | grep inet | awk -F ":" '{print $2}' | awk -F " " '{print $1}')
+NETW_GATEWAY=$(echo $NETW_IP | awk -F "." '{print $1"."$2"."$3".1"}')
+NETW_BCAST=$(echo $NETW_IP | awk -F "." '{print $1"."$2"."$3".255"}')
+
+# set up eth0 device with a static IP address (hope it works...)
+cd /etc/sysconfig/
+printf "ONBOOT=yes\n\
+IFACE=$NETW_NAME\n\
+SERVICE=ipv4-static\n\
+IP=$NETW_IP\n\
+GATEWAY=$NETW_GATEWAY\n\
+PREFIX=24\n\
+BROADCAST=$NETW_BCAST\n\
+"> ifconfig.$NETW_NAME
+
+# set up dns
+cat > /etc/resolv.conf << "EOF"
+# Begin /etc/resolv.conf
+
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+# End /etc/resolv.conf
+EOF
+
+# set hostname
+HOST_NAME="agrumbac_LFS"
+echo $HOST_NAME > /etc/hostname
+
+# set up /etc/hosts (Still no idea what I'm doing...)
+printf "\
+# Begin /etc/hosts\n\
+\n\
+127.0.0.1 localhost\n\
+$NETW_IP $HOST_NAME\n\
+::1       localhost ip6-localhost ip6-loopback\n\
+ff02::1   ip6-allnodes\n\
+ff02::2   ip6-allrouters\n\
+\n\
+# End /etc/hosts\n\
+"> /etc/hosts
+
+# configuring sysvinit
+cat > /etc/inittab << "EOF"
+# Begin /etc/inittab
+
+id:3:initdefault:
+
+si::sysinit:/etc/rc.d/init.d/rc S
+
+l0:0:wait:/etc/rc.d/init.d/rc 0
+l1:S1:wait:/etc/rc.d/init.d/rc 1
+l2:2:wait:/etc/rc.d/init.d/rc 2
+l3:3:wait:/etc/rc.d/init.d/rc 3
+l4:4:wait:/etc/rc.d/init.d/rc 4
+l5:5:wait:/etc/rc.d/init.d/rc 5
+l6:6:wait:/etc/rc.d/init.d/rc 6
+
+ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
+
+su:S016:once:/sbin/sulogin
+
+1:2345:respawn:/sbin/agetty --noclear tty1 9600
+2:2345:respawn:/sbin/agetty tty2 9600
+3:2345:respawn:/sbin/agetty tty3 9600
+4:2345:respawn:/sbin/agetty tty4 9600
+5:2345:respawn:/sbin/agetty tty5 9600
+6:2345:respawn:/sbin/agetty tty6 9600
+
+# End /etc/inittab
+EOF
+
+# configuring system clock
+cat > /etc/sysconfig/clock << "EOF"
+# Begin /etc/sysconfig/clock
+
+UTC=1
+
+# Set this to any options you might need to give to hwclock,
+# such as machine hardware clock type for Alphas.
+CLOCKPARAMS=
+
+# End /etc/sysconfig/clock
+EOF
+
+# set locale
+CHOSEN_CHAR_MAP="en_US.iso88591"
+LC_ALL=$CHOSEN_CHAR_MAP locale charmap
+LC_ALL=$CHOSEN_CHAR_MAP locale language
+LC_ALL=$CHOSEN_CHAR_MAP locale charmap
+LC_ALL=$CHOSEN_CHAR_MAP locale int_curr_symbol
+LC_ALL=$CHOSEN_CHAR_MAP locale int_prefix
+
+# create /etc/profile
+printf "\n\
+# Begin /etc/profile\n\
+\n\
+export LANG=$CHOSEN_CHAR_MAP\n\
+\n\
+# End /etc/profile\n\
+" > /etc/profile
+
+# create /etc/inputrc
+cat > /etc/inputrc << "EOF"
+# Begin /etc/inputrc
+# Modified by Chris Lynn <roryo@roryo.dynup.net>
+
+# Allow the command prompt to wrap to the next line
+set horizontal-scroll-mode Off
+
+# Enable 8bit input
+set meta-flag On
+set input-meta On
+
+# Turns off 8th bit stripping
+set convert-meta Off
+
+# Keep the 8th bit for display
+set output-meta On
+
+# none, visible or audible
+set bell-style none
+
+# All of the following map the escape sequence of the value
+# contained in the 1st argument to the readline specific functions
+"\eOd": backward-word
+"\eOc": forward-word
+
+# for linux console
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+"\e[3~": delete-char
+"\e[2~": quoted-insert
+
+# for xterm
+"\eOH": beginning-of-line
+"\eOF": end-of-line
+
+# for Konsole
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+
+# End /etc/inputrc
+EOF
+
+# create /etc/shells
+cat > /etc/shells << "EOF"
+# Begin /etc/shells
+
+/bin/sh
+/bin/bash
+
+# End /etc/shells
+EOF
+```
+
+## Making the LFS System Bootable
 
 ```bash
 
