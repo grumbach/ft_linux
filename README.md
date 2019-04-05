@@ -475,5 +475,80 @@ EOF
 ## Making the LFS System Bootable
 
 ```bash
+# create the fstab file
+printf "\
+# Begin /etc/fstab\n\
+\n\
+# file system  mount-point  type     options             dump  fsck\n\
+#                                                              order\n\
+\n\
+/dev/sda3      /            ext4     defaults            1     1\n\
+/dev/sda2      swap         swap     pri=1               0     0\n\
+proc           /proc        proc     nosuid,noexec,nodev 0     0\n\
+sysfs          /sys         sysfs    nosuid,noexec,nodev 0     0\n\
+devpts         /dev/pts     devpts   gid=5,mode=620      0     0\n\
+tmpfs          /run         tmpfs    defaults            0     0\n\
+devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0\n\
+\n\
+# End /etc/fstab\n\
+" > /etc/fstab
+```
 
+## Installing the Linux Kernel
+
+```bash
+cd /sources
+tar xf linux-4.20.12.tar.xz
+cd linux-4.20.12
+make mrproper
+make defconfig
+
+# don't do this at home !
+# instead of all these **HORRIBLE** sed commands follow these instructions
+# http://www.linuxfromscratch.org/lfs/view/stable/chapter08/kernel.html
+# make menuconfig
+sed -i "s/# CONFIG_EFI_STUB is not set/CONFIG_EFI_STUB=y\n# CONFIG_EFI_MIXED is not set/g" .config
+sed -i "s/# CONFIG_EFI_TEST is not set/# CONFIG_EFI_TEST is not set\n# CONFIG_APPLE_PROPERTIES is not set\n# CONFIG_RESET_ATTACK_MITIGATION is not set/g" .config
+sed -i 's/CONFIG_UEVENT_HELPER=y/# CONFIG_UEVENT_HELPER is not set/g' .config
+sed -i 's:CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"::g' .config
+sed -i 's/CONFIG_SECTION_MISMATCH_WARN_ONLY=y/CONFIG_SECTION_MISMATCH_WARN_ONLY=y\nCONFIG_FRAME_POINTER=y/' .config
+sed -i 's/CONFIG_UNWINDER_ORC=y/# CONFIG_UNWINDER_ORC is not set/g' .config
+sed -i 's/# CONFIG_UNWINDER_FRAME_POINTER is not set/CONFIG_UNWINDER_FRAME_POINTER=y/g' .config
+
+# takes some time...
+make
+
+# bind the boot partition as root in host system
+exec <&-
+sudo su
+mount --bind /boot /mnt/lfs/boot
+
+# enter chroot again
+chroot "$LFS" /usr/bin/env -i          \
+    HOME=/root TERM="$TERM"            \
+    PS1='(lfs chroot) \u:\w\$ '        \
+    PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+    /bin/bash --login
+
+# copy files to /boot
+cp -iv arch/x86/boot/bzImage /boot/vmlinuz-4.20.12-lfs-8.4
+cp -iv System.map /boot/System.map-4.20.12
+cp -iv .config /boot/config-4.20.12
+install -d /usr/share/doc/linux-4.20.12
+cp -r Documentation/* /usr/share/doc/linux-4.20.12
+
+# chown kernel sources to root
+cd ..
+chown -R 0:0 linux-4.20.12
+
+# configuring linux module load order
+install -v -m755 -d /etc/modprobe.d
+cat > /etc/modprobe.d/usb.conf << "EOF"
+# Begin /etc/modprobe.d/usb.conf
+
+install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
+install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
+
+# End /etc/modprobe.d/usb.conf
+EOF
 ```
