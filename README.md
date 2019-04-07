@@ -525,6 +525,8 @@ make modules_install
 # bind the boot partition as root in host system
 exec <&-
 sudo su
+umount /boot
+mount /dev/sda1 /boot
 mount --bind /boot /mnt/lfs/boot
 
 # enter chroot again
@@ -562,8 +564,8 @@ EOF
 ## Set up GRUB
 
 ```bash
-# set up the boot track <------------------ TODO stuck here!!!
-grub-install /dev/sda1
+# set up the boot track
+grub-install /dev/sda
 
 # creating the GRUB configuration file
 cat > /boot/grub/grub.cfg << "EOF"
@@ -607,8 +609,6 @@ umount -v $LFS/dev
 umount -v $LFS/run
 umount -v $LFS/proc
 umount -v $LFS/sys
-umount -v $LFS/root #not sure TODO !!
-umount -v $LFS/swap #not sure TODO !!
 umount -v $LFS
 
 # reboot
