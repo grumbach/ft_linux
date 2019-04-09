@@ -312,20 +312,21 @@ rm -rf lfs-bootscripts-20180820
 # creating custom udev rules
 bash /lib/udev/init-net-rules.sh
 
-# gather network info (I have no idea what I'm doing...)
+# gather network info (set this according to your network)
 NETW_NAME=$(cat /etc/udev/rules.d/70-persistent-net.rules | grep ACTION | awk -F "NAME=" '{print $2}' | sed 's/"//g' | head -1)
 NETW_IP=$(ifconfig | grep -A2 $NETW_NAME | grep inet | awk -F ":" '{print $2}' | awk -F " " '{print $1}')
-NETW_GATEWAY=$(echo $NETW_IP | awk -F "." '{print $1"."$2"."$3".1"}')
-NETW_BCAST=$(echo $NETW_IP | awk -F "." '{print $1"."$2"."$3".255"}')
+NETW_GATEWAY=$(echo $NETW_IP | awk -F "." '{print $1"."$2".254.254"}')
+NETW_BCAST=$(echo $NETW_IP | awk -F "." '{print $1"."$2".255.255"}')
+NETW_PREFIX="16"
 
-# set up eth0 device with a static IP address (hope it works...)
+# set up eth0 device with a static IP address
 cd /etc/sysconfig/
 printf "ONBOOT=yes\n\
 IFACE=$NETW_NAME\n\
 SERVICE=ipv4-static\n\
 IP=$NETW_IP\n\
 GATEWAY=$NETW_GATEWAY\n\
-PREFIX=24\n\
+PREFIX=$NETW_PREFIX\n\
 BROADCAST=$NETW_BCAST\n\
 "> ifconfig.$NETW_NAME
 
@@ -333,8 +334,8 @@ BROADCAST=$NETW_BCAST\n\
 cat > /etc/resolv.conf << "EOF"
 # Begin /etc/resolv.conf
 
-nameserver 8.8.8.8
-nameserver 8.8.4.4
+nameserver 1.1.1.1
+nameserver 1.0.0.1
 
 # End /etc/resolv.conf
 EOF
@@ -343,7 +344,7 @@ EOF
 HOST_NAME="agrumbac"
 echo $HOST_NAME > /etc/hostname
 
-# set up /etc/hosts (Still no idea what I'm doing...)
+# set up /etc/hosts
 printf "\
 # Begin /etc/hosts\n\
 \n\
