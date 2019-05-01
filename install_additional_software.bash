@@ -139,3 +139,51 @@ make
 mv sl /bin/
 cd ..
 rm -rf sl
+
+# http://www.linuxfromscratch.org/blfs/view/8.3/basicnet/dhcp.html
+wget ftp://ftp.isc.org/isc/dhcp/4.4.1/dhcp-4.4.1.tar.gz
+tar xf dhcp-4.4.1.tar.gz 
+cd dhcp-4.4.1
+CFLAGS="-D_PATH_DHCLIENT_SCRIPT='\"/sbin/dhclient-script\"'         \
+        -D_PATH_DHCPD_CONF='\"/etc/dhcp/dhcpd.conf\"'               \
+        -D_PATH_DHCLIENT_CONF='\"/etc/dhcp/dhclient.conf\"'         \
+        -Wno-error"        &&
+
+./configure --prefix=/usr                                           \
+            --sysconfdir=/etc/dhcp                                  \
+            --localstatedir=/var                                    \
+            --with-srv-lease-file=/var/lib/dhcpd/dhcpd.leases       \
+            --with-srv6-lease-file=/var/lib/dhcpd/dhcpd6.leases     \
+            --with-cli-lease-file=/var/lib/dhclient/dhclient.leases \
+            --with-cli6-lease-file=/var/lib/dhclient/dhclient6.leases &&
+make -j1
+make -C client install         &&
+mv -v /usr/sbin/dhclient /sbin &&
+install -v -m755 client/scripts/linux /sbin/dhclient-script
+# configure
+install -vdm755 /etc/dhcp &&
+cat > /etc/dhcp/dhclient.conf << "EOF"
+# Begin /etc/dhcp/dhclient.conf
+#
+# Basic dhclient.conf(5)
+
+#prepend domain-name-servers 127.0.0.1;
+request subnet-mask, broadcast-address, time-offset, routers,
+        domain-name, domain-name-servers, domain-search, host-name,
+        netbios-name-servers, netbios-scope, interface-mtu,
+        ntp-servers;
+require subnet-mask, domain-name-servers;
+#timeout 60;
+#retry 60;
+#reboot 10;
+#select-timeout 5;
+#initial-interval 2;
+
+# End /etc/dhcp/dhclient.conf
+EOF
+install -v -dm 755 /var/lib/dhclient
+# test
+NETW_NAME=$(cat /etc/udev/rules.d/70-persistent-net.rules | grep ACTION | awk -F "NAME=" '{print $2}' | sed 's/"//g' | head -1)
+dhclient -v $NETW_NAME
+cd ..
+rm -rf dhcp-4.4.1
