@@ -35,6 +35,7 @@ sudo su
 
 # mount root partition
 export LFS=/mnt/lfs
+mkdir -v $LFS
 mount -v -t ext4 /dev/sda3 $LFS
 
 # mount swap
